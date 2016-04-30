@@ -63,7 +63,11 @@ public class MelodiesFragment extends BaseFragment {
             }
         });
         changeMode(currentMode, isInLandscape());
-        setGridIcon();
+        if (currentMode == GRID_MODE) {
+            setGridIcon();
+        } else {
+            setListIcon();
+        }
         initEndlessListener();
         executeService(new MelodiesRestService(BasePaginableHolderAdapter.LIMIT, melodiesAdapter.getOffset()));
     }
@@ -94,11 +98,13 @@ public class MelodiesFragment extends BaseFragment {
         } else {
             throw new IntechException(MessageFormat.format("Illegal visual mode {0}. Can be {1} or {2}", visualMode, GRID_MODE, LIST_MODE));
         }
-
-        if (decor == null) {
+        if (decor != null) {
+            recyclerView.removeItemDecoration(decor);
+        } else {
             decor = new ItemOffsetDecoration(15, spanCount);
-            recyclerView.addItemDecoration(decor);
         }
+        recyclerView.addItemDecoration(decor);
+
         if (listener != null) {
             listener.setmLinearLayoutManager(layoutManager);
         }

@@ -1,5 +1,6 @@
 package com.aizenberg.intech.view;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.drawable.Drawable;
 import android.support.annotation.StringRes;
@@ -23,7 +24,6 @@ public class CustomToolbarController {
     private View leftContainer;
     private View rightContainer;
     private TextView centerTextView;
-    private View customView;
     private Context context;
     private Toolbar toolbar;
     private View defaultHeaderView;
@@ -55,10 +55,6 @@ public class CustomToolbarController {
         toolbar.setVisibility(View.GONE);
     }
 
-    public View getDefaultHeaderView() {
-        return defaultHeaderView;
-    }
-
     public void resetToolbarColor() {
         setToolbarColor(android.R.color.white, android.R.color.black);
     }
@@ -82,11 +78,13 @@ public class CustomToolbarController {
     }
 
 
+    @SuppressLint("InflateParams")
     private void resetView() {
         toolbar.removeAllViews();
 
         defaultHeaderView = LayoutInflater.from(context).inflate(R.layout.default_header_bar, null);
         toolbar.addView(defaultHeaderView);
+
         leftImageView = (ImageView) defaultHeaderView.findViewById(R.id.img_default_header_left);
         leftContainer = defaultHeaderView.findViewById(R.id.container_default_header_left);
         rightImageView = (ImageView) defaultHeaderView.findViewById(R.id.img_default_header_right);

@@ -1,5 +1,7 @@
 package com.aizenberg.intech.activity;
 
+import android.app.Fragment;
+import android.app.FragmentManager;
 import android.os.Bundle;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -8,8 +10,9 @@ import android.view.View;
 
 import com.aizenberg.intech.R;
 import com.aizenberg.intech.core.event.NetworkStateChangedEvent;
-import com.aizenberg.intech.core.model.Melodies;
+import com.aizenberg.intech.fragment.BaseFragment;
 import com.aizenberg.intech.fragment.MelodiesFragment;
+import com.aizenberg.intech.view.CroutonShowingWrapper;
 import com.aizenberg.intech.view.CustomToolbarController;
 import com.aizenberg.support.fsm.ISwitcher;
 import com.aizenberg.support.fsm.Switcher;
@@ -23,8 +26,9 @@ import de.keyboardsurfer.android.widget.crouton.Style;
 public class MainActivity extends AppCompatActivity {
 
     private View progressView;
-    private Crouton crouton;
+    private Crouton noInternetConnectionCrouton;
     private CustomToolbarController toolbarController;
+    private CroutonShowingWrapper wrapper;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,17 +78,17 @@ public class MainActivity extends AppCompatActivity {
 
     public void showNoInternetConnection() {
         resetPreviousCrouton();
-        crouton = Crouton.makeText(this, getString(R.string.no_internet_connection), Style.ALERT, R.id.fragment_container);
-        crouton.show();
+        noInternetConnectionCrouton = Crouton.makeText(this, getString(R.string.no_internet_connection), Style.ALERT, R.id.fragment_container);
+        noInternetConnectionCrouton.show();
     }
 
     private void resetPreviousCrouton() {
-        if (crouton != null) {
+        if (noInternetConnectionCrouton != null) {
             try {
-                crouton.cancel();
+                noInternetConnectionCrouton.cancel();
             } catch (Exception ignored) {
             } finally {
-                crouton = null;
+                noInternetConnectionCrouton = null;
             }
         }
     }
@@ -102,6 +106,32 @@ public class MainActivity extends AppCompatActivity {
         EventBus.getDefault().unregister(this);
     }
 
+    @Override
+    public void onBackPressed() {
+        FragmentManager fragmentManager = getFragmentManager();
+        if (fragmentManager.getBackStackEntryCount() > 1) {
+            Fragment fragment = fragmentManager.findFragmentById(R.id.fragment_container);
+            if (fragment != null && fragment instanceof BaseFragment && ((BaseFragment) fragment).onBackPressed()) {
+                return;
+            }
+            fragmentManager.popBackStack();
+        } else {
+            if (showExitCrouton()) {
+                super.onBackPressed();
+            }
+        }
+    }
+
+    private boolean showExitCrouton() {
+        if (wrapper == null || !wrapper.isShowing()) {
+            Crouton customCrouton = makeCustomCrouton("Press again to exit", Style.CONFIRM);
+            wrapper = new CroutonShowingWrapper(customCrouton);
+            customCrouton.show();
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     public Crouton makeCustomCrouton(String text, Style style) {
         return Crouton.makeText(this, text, style, R.id.fragment_container);

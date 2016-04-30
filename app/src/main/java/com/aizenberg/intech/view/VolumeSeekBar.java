@@ -11,6 +11,7 @@ import android.widget.SeekBar;
  * Created by Yuriy Aizenberg
  */
 public class VolumeSeekBar extends SeekBar {
+
     public VolumeSeekBar(Context context) {
         super(context);
     }
@@ -27,6 +28,7 @@ public class VolumeSeekBar extends SeekBar {
         super.onSizeChanged(h, w, oldh, oldw);
     }
 
+    @SuppressWarnings("SuspiciousNameCombination")
     @Override
     protected synchronized void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(heightMeasureSpec, widthMeasureSpec);
@@ -50,10 +52,8 @@ public class VolumeSeekBar extends SeekBar {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
             case MotionEvent.ACTION_UP:
-                int i = 0;
-                i = getMax() - (int) (getMax() * event.getY() / getHeight());
+                int i = getMax() - (int) (getMax() * event.getY() / getHeight());
                 setProgress(i);
-                Log.i("Progress", getProgress() + "");
                 onSizeChanged(getWidth(), getHeight(), 0, 0);
                 break;
 

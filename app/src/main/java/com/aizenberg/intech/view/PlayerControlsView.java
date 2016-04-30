@@ -74,11 +74,6 @@ public class PlayerControlsView extends LinearLayout {
         setClickListenerInternal(State.PLAY);
     }
 
-    public void setStopIcon() {
-        imgPlayerState.setImageResource(R.drawable.ic_stop_black_24dp);
-        setClickListenerInternal(State.STOP);
-    }
-
     public void setPauseIcon() {
         imgPlayerState.setImageResource(R.drawable.ic_pause_black_24dp);
         setClickListenerInternal(State.PAUSE);

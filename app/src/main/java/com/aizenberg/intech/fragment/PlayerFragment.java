@@ -3,12 +3,15 @@ package com.aizenberg.intech.fragment;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 
 import com.aizenberg.intech.R;
 import com.aizenberg.intech.core.model.Melody;
 import com.aizenberg.intech.view.PlayerControlsView;
 import com.aizenberg.intech.view.VolumeView;
+import com.aizenberg.support.utils.StringUtils;
 import com.aizenberg.support.viewinjector.annotation.Id;
 import com.aizenberg.support.viewinjector.annotation.Layout;
 import com.google.android.exoplayer.ExoPlaybackException;
@@ -21,6 +24,7 @@ import com.google.android.exoplayer.extractor.ExtractorSampleSource;
 import com.google.android.exoplayer.upstream.DefaultAllocator;
 import com.google.android.exoplayer.upstream.DefaultHttpDataSource;
 import com.google.android.exoplayer.util.Util;
+import com.squareup.picasso.Picasso;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,6 +38,9 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
 
     @Id(R.id.player_controls)
     private PlayerControlsView controlsView;
+    @Id(R.id.img_artist)
+    private ImageView imgArtist;
+
     private ExoPlayer exoPlayer;
     private Melody data;
     private static final int BUFFER_SEGMENT_SIZE = 64 * 1024;
@@ -53,6 +60,10 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
         if (data == null || data.getDemoUrl() == null) {
             getActivity().onBackPressed();
             return;
+        }
+        String pictureUrl = data.getPictureUrl();
+        if (!StringUtils.isEmpty(pictureUrl)) {
+            Picasso.with(getActivity()).load(pictureUrl).fit().centerCrop().into(imgArtist);
         }
         controlsView.block();
         exoPlayer = ExoPlayer.Factory.newInstance(1);
@@ -91,8 +102,13 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
             public void onStateChanged(PlayerControlsView.State state) {
                 switch (state) {
                     case PLAY:
-                        exoPlayer.setPlayWhenReady(true);
-                        controlsView.setPauseIcon();
+                        if (exoPlayer.getPlaybackState() == ExoPlayer.STATE_ENDED) {
+                            controlsView.setPauseIcon();
+                            exoPlayer.seekTo(0);
+                        } else {
+                            exoPlayer.setPlayWhenReady(true);
+                            controlsView.setPauseIcon();
+                        }
                         break;
                     case PAUSE:
                         savedPosition = exoPlayer.getCurrentPosition();
@@ -157,10 +173,9 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
         stopPlayerHandler();
         final long updateTime = TimeUnit.SECONDS.toMillis(1);
         playerTickHandler = new Handler();
-        playerTickHandler.postDelayed(new Runnable() {
+        playerTickHandler.post(new Runnable() {
             @Override
             public void run() {
-                //Refresh himself
                 long duration = exoPlayer.getDuration();
                 long currentPosition = exoPlayer.getCurrentPosition();
                 float percentsFloat = currentPosition * 1f / duration;
@@ -168,6 +183,7 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
                 setupCurrentTime(currentPosition);
                 setupElapsedTime(duration - currentPosition);
                 controlsView.setSeekbarProgress(percents);
+                //Refresh self
                 playerTickHandler.postDelayed(this, updateTime);
             }
 
@@ -189,8 +205,7 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
             }
 
 
-
-        }, updateTime);
+        });
     }
 
     private void stopPlayerHandler() {
@@ -206,5 +221,26 @@ public class PlayerFragment extends BaseFragment implements ExoPlayer.Listener {
 
     private long toSeconds(long currentTime) {
         return TimeUnit.SECONDS.convert(currentTime - TimeUnit.MINUTES.toMillis(toMinutes(currentTime)), TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        setupCenterText(data != null ? data.getArtist() : "");
+        setupRightImage(null, null);
+        setupLeftImage(R.drawable.back, new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                getActivity().onBackPressed();
+            }
+        });
+    }
+
+    @Override
+    public boolean onBackPressed() {
+        if (exoPlayer != null) {
+            exoPlayer.release();
+        }
+        return super.onBackPressed();
     }
 }
