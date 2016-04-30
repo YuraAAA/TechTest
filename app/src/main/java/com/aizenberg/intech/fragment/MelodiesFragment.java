@@ -8,6 +8,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.View;
 
 import com.aizenberg.intech.R;
+import com.aizenberg.intech.activity.MainActivity;
+import com.aizenberg.intech.adapter.BaseHolderAdapter;
 import com.aizenberg.intech.adapter.BasePaginableHolderAdapter;
 import com.aizenberg.intech.adapter.MelodiesAdapter;
 import com.aizenberg.intech.adapter.decorator.ItemOffsetDecoration;
@@ -17,6 +19,8 @@ import com.aizenberg.intech.core.model.Melody;
 import com.aizenberg.intech.core.model.RestFault;
 import com.aizenberg.intech.core.network.service.MelodiesRestService;
 import com.aizenberg.intech.fragment.common.EndlessRecyclerOnScrollListener;
+import com.aizenberg.intech.view.PositionRecyclerView;
+import com.aizenberg.support.fsm.Switcher;
 import com.aizenberg.support.viewinjector.annotation.Id;
 import com.aizenberg.support.viewinjector.annotation.Layout;
 
@@ -35,12 +39,14 @@ public class MelodiesFragment extends BaseFragment {
     public static final int LIST_MODE = 1;
 
     @Id(R.id.recycler_view)
-    private RecyclerView recyclerView;
+    private PositionRecyclerView recyclerView;
     @Id(R.id.progress_bar_lazy)
     private View lazyProgressView;
     private boolean isLoading;
     private MelodiesAdapter melodiesAdapter;
     private int currentMode = GRID_MODE;
+    private ItemOffsetDecoration decor;
+    private EndlessRecyclerOnScrollListener listener;
 
     @Override
     protected void afterViewCreated(Bundle savedInstanceState) {
@@ -48,6 +54,14 @@ public class MelodiesFragment extends BaseFragment {
         recyclerView.setHasFixedSize(true);
         melodiesAdapter = new MelodiesAdapter(getActivity());
         melodiesAdapter.setHasStableIds(true);
+        melodiesAdapter.setItemClickListener(new BaseHolderAdapter.IItemClickListener<Melody>() {
+            @Override
+            public void onItemClick(Melody data) {
+                Bundle args = new Bundle();
+                args.putSerializable("data", data);
+                Switcher.obtainSwitcher(MainActivity.class).switchTo(PlayerFragment.class, args);
+            }
+        });
         changeMode(currentMode, isInLandscape());
         setGridIcon();
         initEndlessListener();
@@ -55,7 +69,7 @@ public class MelodiesFragment extends BaseFragment {
     }
 
     private void initEndlessListener() {
-        recyclerView.addOnScrollListener(new EndlessRecyclerOnScrollListener(recyclerView.getLayoutManager()) {
+        listener = new EndlessRecyclerOnScrollListener(recyclerView.getLayoutManager()) {
             @Override
             public void onLoadMore() {
                 if (melodiesAdapter.isStopped()) return;
@@ -64,7 +78,8 @@ public class MelodiesFragment extends BaseFragment {
                 lazyProgressView.setVisibility(View.VISIBLE);
                 executeService(new MelodiesRestService(BasePaginableHolderAdapter.LIMIT, melodiesAdapter.getOffset()), true);
             }
-        });
+        };
+        recyclerView.addOnScrollListener(listener);
     }
 
     private void changeMode(int visualMode, boolean isInLandscape) {
@@ -79,11 +94,18 @@ public class MelodiesFragment extends BaseFragment {
         } else {
             throw new IntechException(MessageFormat.format("Illegal visual mode {0}. Can be {1} or {2}", visualMode, GRID_MODE, LIST_MODE));
         }
-        int offset = recyclerView.computeVerticalScrollOffset();
-        recyclerView.addItemDecoration(new ItemOffsetDecoration(15, spanCount));
+
+        if (decor == null) {
+            decor = new ItemOffsetDecoration(15, spanCount);
+            recyclerView.addItemDecoration(decor);
+        }
+        if (listener != null) {
+            listener.setmLinearLayoutManager(layoutManager);
+        }
         recyclerView.setLayoutManager(layoutManager);
         recyclerView.setAdapter(melodiesAdapter);
-        recyclerView.scrollToPosition(offset);
+        melodiesAdapter.notifyDataSetChanged(); //Redraw all items for avoiding image lagging
+        recyclerView.scrollToPosition(recyclerView.getCurrentPosition());
     }
 
     @Override

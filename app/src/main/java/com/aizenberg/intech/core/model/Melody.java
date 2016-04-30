@@ -14,7 +14,7 @@ public class Melody extends CommonIdsModel {
     private String code;
     private String smsNumber;
     private String price;
-    private float fprice;
+    private float fPrice;
     private String prolongationPrice;
     private float fProlongationPrice;
     private String purchasePeriod;
@@ -67,11 +67,11 @@ public class Melody extends CommonIdsModel {
     }
 
     public float getFprice() {
-        return fprice;
+        return fPrice;
     }
 
     public void setFprice(float fprice) {
-        this.fprice = fprice;
+        this.fPrice = fprice;
     }
 
     public String getProlongationPrice() {

@@ -84,6 +84,8 @@ dependencies {
     compile 'com.nineoldandroids:library:2.4.0'
     compile 'org.greenrobot:eventbus:3.0.0'
 
+    compile 'com.google.android.exoplayer:exoplayer:r1.5.7'
+
     compile('de.keyboardsurfer.android.widget:crouton:1.8.5@aar') {
         // exclusion is not necessary, but generally a good idea.
         exclude group: 'com.google.android', module: 'support-v4'
